@@ -18,6 +18,8 @@ type User struct {
 	Email       string    `json:"email"`
 	Password    string    `json:"password"`
 	DateOfBirth time.Time `json:"birth_date"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (u User) Valid(db *gorm.DB) []error {
@@ -41,8 +43,10 @@ func (u User) Valid(db *gorm.DB) []error {
 
 // BeforeCreate : Gorm hook
 func (u *User) BeforeCreate(scope *gorm.Scope) {
+	id, _ := uuid.NewV4()
+	u.UUID = id.String()
 	scope.SetColumn("Password", hashPassword(u.Password))
-	scope.SetColumn("UUID", uuid.NewV4().String())
+	scope.SetColumn("UUID", u.UUID)
 	return
 }
 
