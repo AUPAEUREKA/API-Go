@@ -1,0 +1,15 @@
+version: '3.2'
+
+services:
+  db:
+    image: postgres:9.6-alpine
+    environment:
+    - API_SECRET=85ds47
+    - POSTGRES_DB=go_vote
+    - POSTGRES_USER=api-go
+    - POSTGRES_PASSWORD=go-api
+    ports:
+    - "5432:5432"
+
+volumes:
+  db-data: {}
