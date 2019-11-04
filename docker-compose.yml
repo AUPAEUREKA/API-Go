@@ -4,10 +4,10 @@ services:
   db:
     image: postgres:9.6-alpine
     environment:
-    - API_SECRET=85ds47
-    - POSTGRES_DB=go_vote
-    - POSTGRES_USER=api-go
-    - POSTGRES_PASSWORD=go-api
+      API_SECRET: 85ds47
+      POSTGRES_DB: go_vote
+      POSTGRES_USER: apigo
+      POSTGRES_PASSWORD: go-api
     ports:
     - "5432:5432"
 

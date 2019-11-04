@@ -1,16 +1,14 @@
 package main
 
 import (
-	"net/http"
-	"time"
+	"API-Go/database"
+	"API-Go/handler"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
-	uuid "github.com/satori/go.uuid"
 )
 
 // User is the representation of a client.
-type User struct {
+/*type User struct {
 	gorm.Model
 	UUID        string    `json:"uuid"`
 	AccessLevel int       `json:"id"`
@@ -32,14 +30,15 @@ type Vote struct {
 	EndDate   time.Time `json:"end_date"`
 }
 
-var listUser = map[string]User{}
+var listUser = map[string]User{}*/
 
 func main() {
+	database.Init
 	r := gin.Default()
 	//r.POST("/login", PostLoginHandler)
-	r.GET("/users/:uuid", GetUserHandler)
-	r.GET("/users", GetAllUserHandler)
-	r.POST("/users", PostUserHandler)
+	r.PUT("/users/:uuid", handler.UpdateUser)
+	r.DELETE("/users/:uuid", handler.DeleteUser)
+	r.POST("/users", handler.CreateUser)
 	//r.PUT("/users/:uuid", PutUserHandler)
 	//r.DELETE("/users/:uuid", DeleteUserHandler)
 	//r.POST("/votes", PostVoteHandler)
@@ -50,7 +49,7 @@ func main() {
 }
 
 // GetUserHandler is retriving user from the given uuid param.
-func GetUserHandler(ctx *gin.Context) {
+/*func GetUserHandler(ctx *gin.Context) {
 	if u, ok := listUser[ctx.Param("uuid")]; ok {
 		ctx.JSON(http.StatusOK, u)
 		return
@@ -74,3 +73,4 @@ func PostUserHandler(ctx *gin.Context) {
 	listUser[u.UUID] = u
 	ctx.JSON(http.StatusOK, u)
 }
+*/

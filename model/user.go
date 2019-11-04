@@ -11,6 +11,7 @@ import (
 )
 
 type User struct {
+	gorm.Model
 	UUID        string    `json:"uuid"`
 	AccessLevel int       `json:"id"`
 	FirstName   string    `json:"first_name"`
@@ -18,9 +19,20 @@ type User struct {
 	Email       string    `json:"email"`
 	Password    string    `json:"password"`
 	DateOfBirth time.Time `json:"birth_date"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
 }
+
+/*type UserModel struct {
+	gorm.Model
+	UUID        string    `gorm:"type:varchar(100);unique_index"`
+	AccessLevel int       `gorm:"id"`
+	FirstName   string    `gorm:"first_name"`
+	LastName    string    `gorm:"last_name"`
+	Email       string    `gorm:"type:varchar(100);unique_index"`
+	Password    string    `gorm:"password"`
+	DateOfBirth time.Time `gorm:"birth_date"`
+	CreatedAt   time.Time `gorm:"created_at"`
+	UpdatedAt   time.Time `gorm:"updated_at"`
+}*/
 
 func (u User) Valid(db *gorm.DB) []error {
 	var errs []error
