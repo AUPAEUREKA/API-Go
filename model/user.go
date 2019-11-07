@@ -1,24 +1,18 @@
 package model
 
 import (
-	"errors"
-	"time"
-
-	old "github.com/bearbin/go-age"
 	"github.com/jinzhu/gorm"
-	uuid "github.com/satori/go.uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
 	gorm.Model
-	UUID        string    `json:"uuid"`
-	AccessLevel int       `json:"id"`
-	FirstName   string    `json:"first_name"`
-	LastName    string    `json:"last_name"`
-	Email       string    `json:"email"`
-	Password    string    `json:"password"`
-	DateOfBirth time.Time `json:"birth_date"`
+	UUID        string `json:"uuid"`
+	AccessLevel int    `json:"access"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	DateOfBirth int    `json:"birth_date"`
 }
 
 /*type UserModel struct {
@@ -34,7 +28,7 @@ type User struct {
 	UpdatedAt   time.Time `gorm:"updated_at"`
 }*/
 
-func (u User) Valid(db *gorm.DB) []error {
+/*func (u User) Valid(db *gorm.DB) []error {
 	var errs []error
 	if len(u.Password) == 0 {
 		errs = append(errs, errors.New("No given password"))
@@ -51,10 +45,10 @@ func (u User) Valid(db *gorm.DB) []error {
 		return errs
 	}
 	return nil
-}
+}*/
 
 // BeforeCreate : Gorm hook
-func (u *User) BeforeCreate(scope *gorm.Scope) {
+/*func (u *User) BeforeCreate(scope *gorm.Scope) {
 	id, _ := uuid.NewV4()
 	u.UUID = id.String()
 	scope.SetColumn("Password", hashPassword(u.Password))
@@ -75,7 +69,7 @@ func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 }
 
 // hashPassword : simple password hashing method
-func hashPassword(password string) string {
+/*func hashPassword(password string) string {
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes)
 }
@@ -84,4 +78,4 @@ func hashPassword(password string) string {
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
-}
+}*/
