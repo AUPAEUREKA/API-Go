@@ -13,10 +13,11 @@ import (
 var db *gorm.DB
 var err error
 
+//Create a new proposal
 func CreateProposal(c *gin.Context) {
 	var proposal model.Proposal
 	c.BindJSON(&proposal)
-	id, _ := uuid.NewV4()
+	id := uuid.NewV4()
 	proposal.UUID = id.String()
 	proposal.StartDate = time.Now()
 	proposal.EndDate = time.Now().AddDate(0, 3, 0)
@@ -24,6 +25,7 @@ func CreateProposal(c *gin.Context) {
 	c.JSON(200, &proposal)
 }
 
+//Update a proposal
 func UpdateProposal(c *gin.Context) {
 	var proposal model.Proposal
 	uuid := c.Params.ByName("uuid")
@@ -37,6 +39,7 @@ func UpdateProposal(c *gin.Context) {
 	c.JSON(200, proposal)
 }
 
+//User vote a proposal
 func Vote(c *gin.Context) {
 	var user model.User
 	var proposal model.Proposal
@@ -63,6 +66,7 @@ func Vote(c *gin.Context) {
 
 }
 
+//Get data a proposal
 func GetProposal(c *gin.Context) {
 	var proposal model.Proposal
 	uuid := c.Params.ByName("uuid")

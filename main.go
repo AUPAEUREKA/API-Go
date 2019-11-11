@@ -21,6 +21,8 @@ var err error
 
 func main() {
 
+	//Connect database
+	//var db = database.Init
 	db, err = gorm.Open("postgres", "host=127.0.0.1 port=5432 user=apigo dbname=govote password=go-api sslmode=disable")
 	if err != nil {
 		panic(err)
@@ -29,9 +31,10 @@ func main() {
 
 	fmt.Println("Successfully connected!")
 
+	//Migrate models
 	db.AutoMigrate(&model.User{}, &model.Proposal{})
 
-	//var db = database.Init
+	//Routers
 	r := gin.Default()
 	r.POST("/login", Login)
 	r.PUT("/users/:uuid", UpdateUser)
@@ -44,6 +47,7 @@ func main() {
 	r.Run(":8080")
 }
 
+//Connect a user and create a JWT token
 func Login(c *gin.Context) {
 	type login struct {
 		Username string `json:"email"`
@@ -84,6 +88,7 @@ func Login(c *gin.Context) {
 	}
 }
 
+//Create a user with validations
 func CreateUser(c *gin.Context) {
 	var user model.User
 	err := c.BindJSON(&user)
@@ -121,18 +126,19 @@ func CreateUser(c *gin.Context) {
 	c.JSON(200, &user)
 }
 
-// hashPassword : simple password hashing method
+//Simple password hashing method
 func hashPassword(password string) string {
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes)
 }
 
-// CheckPasswordHash : Compare password with a hash
+//Compare password with a hash
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
+//Update a user
 func UpdateUser(c *gin.Context) {
 	var user model.User
 	uuid := c.Params.ByName("uuid")
@@ -148,6 +154,7 @@ func UpdateUser(c *gin.Context) {
 	c.JSON(200, user)
 }
 
+//Delete a user
 func DeleteUser(c *gin.Context) {
 	var user model.User
 	uuid := c.Params.ByName("uuid")
@@ -156,6 +163,7 @@ func DeleteUser(c *gin.Context) {
 	c.JSON(200, "deleted")
 }
 
+//Create a new proposal
 func CreateProposal(c *gin.Context) {
 	var proposal model.Proposal
 	c.BindJSON(&proposal)
@@ -167,6 +175,7 @@ func CreateProposal(c *gin.Context) {
 	c.JSON(200, &proposal)
 }
 
+//Update a proposal
 func UpdateProposal(c *gin.Context) {
 	var proposal model.Proposal
 	uuid := c.Params.ByName("uuid")
@@ -180,6 +189,7 @@ func UpdateProposal(c *gin.Context) {
 	c.JSON(200, proposal)
 }
 
+//User votes a proposal
 func Vote(c *gin.Context) {
 	var user model.User
 	var proposal model.Proposal
@@ -206,6 +216,7 @@ func Vote(c *gin.Context) {
 
 }
 
+//Get data a proposal
 func GetProposal(c *gin.Context) {
 	var proposal model.Proposal
 	uuid := c.Params.ByName("uuid")

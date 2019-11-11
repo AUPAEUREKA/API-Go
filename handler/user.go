@@ -17,19 +17,19 @@ import (
 var dbUser *gorm.DB
 var errUser error
 
-// hashPassword : simple password hashing method
+//Simple password hashing method
 func hashPassword(password string) string {
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes)
 }
 
-// CheckPasswordHash : Compare password with a hash
+//Compare password with a hash
 func CheckPasswordHash(password, hash string) bool {
 	errUser := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return errUser == nil
 }
 
-// CreateUser : create a user with validations
+//create a user with validations
 func CreateUser(c *gin.Context) {
 	var user model.User
 	errUser := c.BindJSON(&user)
@@ -57,7 +57,7 @@ func CreateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, "User with this email already exist")
 		return
 	}
-	id, _ := uuid.NewV4()
+	id := uuid.NewV4()
 	// 1 = single user; 2 = admin
 	user.AccessLevel = 1
 	user.UUID = id.String()
@@ -67,7 +67,7 @@ func CreateUser(c *gin.Context) {
 	c.JSON(200, &user)
 }
 
-// UpdateUser : update a user
+//Update a user
 func UpdateUser(c *gin.Context) {
 	var user model.User
 	uuid := c.Params.ByName("uuid")
@@ -83,7 +83,7 @@ func UpdateUser(c *gin.Context) {
 	c.JSON(200, user)
 }
 
-// DeleteUser : delete a user
+//Delete a user
 func DeleteUser(c *gin.Context) {
 	var user model.User
 	uuid := c.Params.ByName("uuid")
@@ -92,7 +92,7 @@ func DeleteUser(c *gin.Context) {
 	c.JSON(200, "deleted")
 }
 
-// Login : connect a user and add a JWT token
+//Connect a user and add a JWT token
 func Login(c *gin.Context) {
 	type login struct {
 		Username string `json:"email"`
