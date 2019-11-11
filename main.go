@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
+	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	uuid "github.com/satori/go.uuid"
@@ -18,31 +18,6 @@ import (
 
 var db *gorm.DB
 var err error
-
-// User is the representation of a client.
-/*type User struct {
-	gorm.Model
-	UUID        string    `json:"uuid"`
-	AccessLevel int       `json:"id"`
-	FirstName   string    `json:"first_name"`
-	LastName    string    `json:"last_name"`
-	Email       string    `json:"email"`
-	Password    string    `json:"password"`
-	DateOfBirth time.Time `json:"birth_date"`
-}
-
-// Vote is the representation of a vote
-type Vote struct {
-	gorm.Model
-	UUID      string    `json:"uuid"`
-	Title     string    `json:"title"`
-	Desc      string    `json:"desc"`
-	UUIDVote  []User    `json:"uuid_vote"`
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
-}
-
-var listUser = map[string]User{}*/
 
 func main() {
 
@@ -54,7 +29,7 @@ func main() {
 
 	fmt.Println("Successfully connected!")
 
-	db.AutoMigrate(&model.User{} /*, &model.Proposal{}*/)
+	db.AutoMigrate(&model.User{}, &model.Proposal{})
 
 	//var db = database.Init
 	r := gin.Default()
@@ -62,12 +37,10 @@ func main() {
 	r.PUT("/users/:uuid", UpdateUser)
 	r.DELETE("/users/:uuid", DeleteUser)
 	r.POST("/users", CreateUser)
-	//r.PUT("/users/:uuid", PutUserHandler)
-	//r.DELETE("/users/:uuid", DeleteUserHandler)
-	//r.POST("/votes", PostVoteHandler)
-	//r.GET("/votes/:uuid", GetVoteHandler)
-	//r.PUT("/votes/:uuid", PutVoteHandler)
-	//
+	r.POST("/votes", CreateProposal)
+	r.GET("/votes/:uuid", GetProposal)
+	r.PUT("/votes/:uuid", UpdateProposal)
+	r.POST("/users/:uuid_user/vote/:uuid_prop", Vote)
 	r.Run(":8080")
 }
 
@@ -78,9 +51,7 @@ func Login(c *gin.Context) {
 	}
 
 	loginParams := login{}
-	//var user model.User
 	c.ShouldBindJSON(&loginParams)
-	//c.BindJSON(&user)
 	type Result struct {
 		Email       string
 		UUID        string
@@ -103,25 +74,14 @@ func Login(c *gin.Context) {
 
 			c.JSON(200, tokenStr)
 			return
-		}
-	}
-	/*
-		var pass = user.Password
-		fmt.Println(hashPassword(pass))
-		if err := db.Where("email = ?", user.Email).First(&user).Error; err != nil {
-			//if CheckPasswordHash(hashedPassword, user.Password)
-			c.JSON(404, "Wrong email")
-			fmt.Println(err)
 		} else {
-			db.Table("users").Select("password").Where("email = ?", user.Email).Scan(&user)
-			verify := CheckPasswordHash(pass, user.Password)
-			if verify {
-				c.JSON(200, user)
-			} else {
-				c.JSON(404, "Wrong password")
-			}
-
-		}*/
+			c.JSON(http.StatusBadRequest, "wrong password")
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, "wrong email")
+		return
+	}
 }
 
 func CreateUser(c *gin.Context) {
@@ -142,11 +102,16 @@ func CreateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, "You are not adult!")
 		return
 	}
+	/*if age.Age(user.DateOfBirth) < 18 {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, "You are not adult!")
+		return
+	}*/
 	if !db.Where("email = ?", user.Email).Find(&user).RecordNotFound() {
 		c.JSON(http.StatusBadRequest, "User with this email already exist")
 		return
 	}
-	id, _ := uuid.NewV4()
+	id := uuid.NewV4()
 	// 1 = single user; 2 = admin
 	user.AccessLevel = 1
 	user.UUID = id.String()
@@ -191,29 +156,67 @@ func DeleteUser(c *gin.Context) {
 	c.JSON(200, "deleted")
 }
 
-// GetUserHandler is retriving user from the given uuid param.
-/*func GetUserHandler(ctx *gin.Context) {
-	if u, ok := listUser[ctx.Param("uuid")]; ok {
-		ctx.JSON(http.StatusOK, u)
-		return
-	}
-	ctx.JSON(http.StatusNotFound, nil)
+func CreateProposal(c *gin.Context) {
+	var proposal model.Proposal
+	c.BindJSON(&proposal)
+	id := uuid.NewV4()
+	proposal.UUID = id.String()
+	proposal.StartDate = time.Now()
+	proposal.EndDate = time.Now().AddDate(0, 3, 0)
+	db.Create(&proposal)
+	c.JSON(200, &proposal)
 }
 
-// GetAllUserHandler is retriving all users from the database.
-func GetAllUserHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, listUser)
+func UpdateProposal(c *gin.Context) {
+	var proposal model.Proposal
+	uuid := c.Params.ByName("uuid")
+
+	if err := db.Where("uuid = ?", uuid).First(&proposal).Error; err != nil {
+		c.AbortWithStatus(400)
+		panic(err)
+	}
+	c.BindJSON(&proposal)
+	db.Save(&proposal)
+	c.JSON(200, proposal)
 }
 
-// PostUserHandler is creating a new user into the database.
-func PostUserHandler(ctx *gin.Context) {
-	var u User
-	if err := ctx.BindJSON(&u); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+func Vote(c *gin.Context) {
+	var user model.User
+	var proposal model.Proposal
+	uuidUser := c.Params.ByName("uuid_user")
+	uuidProposal := c.Params.ByName("uuid_prop")
+
+	if err := db.Where("uuid = ?", uuidUser).First(&user).Error; err != nil {
+		fmt.Println("err user")
+		c.AbortWithStatus(400)
+		panic(err)
 	}
-	u.UUID = uuid.NewV4().String()
-	listUser[u.UUID] = u
-	ctx.JSON(http.StatusOK, u)
+	if err := db.Where("uuid = ?", uuidProposal).First(&proposal).Error; err != nil {
+		fmt.Println("err prop")
+		c.AbortWithStatus(400)
+		panic(err)
+	}
+
+	if err := db.Model(&proposal).Association("UUIDVote").Append(&user).Error; err != nil {
+		fmt.Println("err query")
+		c.AbortWithStatus(400)
+	} else {
+		c.JSON(200, "A voté")
+	}
+
 }
-*/
+
+func GetProposal(c *gin.Context) {
+	var proposal model.Proposal
+	uuid := c.Params.ByName("uuid")
+
+	if err := db.Where("uuid = ?", uuid).First(&proposal).Error; err != nil {
+		c.AbortWithStatus(400)
+		panic(err)
+	}
+	if err := db.Preload("UUIDVote").First(&proposal, "uuid = ?", uuid).Error; err != nil {
+		c.AbortWithStatus(400)
+		panic(err)
+	}
+	c.JSON(200, &proposal)
+}

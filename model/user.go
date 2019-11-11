@@ -4,6 +4,8 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+//type JsonBirthDate time.Time
+
 type User struct {
 	gorm.Model
 	UUID        string `json:"uuid"`
@@ -13,6 +15,27 @@ type User struct {
 	Email       string `json:"email"`
 	Password    string `json:"password"`
 	DateOfBirth int    `json:"birth_date"`
+}
+
+// imeplement Marshaler und Unmarshalere interface
+/*func (j *JsonBirthDate) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), "\"")
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return err
+	}
+	*j = JsonBirthDate(t)
+	return nil
+}
+
+func (j JsonBirthDate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(j)
+}
+
+// Maybe a Format function for printing your date
+func (j JsonBirthDate) Format(s string) string {
+	t := time.Time(j)
+	return t.Format(s)
 }
 
 /*type UserModel struct {
