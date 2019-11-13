@@ -29,31 +29,44 @@ func CheckPasswordHash(password, hash string) bool {
 	return errUser == nil
 }
 
-//create a user with validations
+//Create a user with validations
 func CreateUser(c *gin.Context) {
+	type result struct {
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		Email       string `json:"email"`
+		Password    string `json:"password"`
+		DateOfBirth string `json:"birth_date"`
+	}
+	UserParams := result{}
+
+	err := c.ShouldBindJSON(&UserParams)
+	layout := "2006-01-02"
+	str := UserParams.DateOfBirth
+	t, er := time.Parse(layout, str)
+
+	if er != nil {
+		fmt.Println(er)
+	}
+
 	var user model.User
-	errUser := c.BindJSON(&user)
-	if errUser != nil {
+	//err := c.BindJSON(&user)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
-	if len(user.Password) == 0 {
+	if len(UserParams.Password) == 0 {
 		fmt.Println("err2")
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, "No given password")
 		return
 	}
-	if user.DateOfBirth < 18 {
+	if age.Age(t) < 18 {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, "You are not adult!")
 		return
 	}
-	/*if age.Age(user.DateOfBirth) < 18 {
-		log.Println(err)
-		c.JSON(http.StatusBadRequest, "You are not adult!")
-		return
-	}*/
-	if !dbUser.Where("email = ?", user.Email).Find(&user).RecordNotFound() {
+	if !db.Where("email = ?", UserParams.Email).Find(&user).RecordNotFound() {
 		c.JSON(http.StatusBadRequest, "User with this email already exist")
 		return
 	}
@@ -61,9 +74,14 @@ func CreateUser(c *gin.Context) {
 	// 1 = single user; 2 = admin
 	user.AccessLevel = 1
 	user.UUID = id.String()
-	var hash = hashPassword(user.Password)
+	var hash = hashPassword(UserParams.Password)
 	user.Password = hash
-	dbUser.Create(&user)
+	user.FirstName = UserParams.FirstName
+	user.LastName = UserParams.LastName
+	user.Email = UserParams.Email
+	user.DateOfBirth = t
+	db.Create(&user)
+	user.Password = ""
 	c.JSON(200, &user)
 }
 
@@ -72,14 +90,15 @@ func UpdateUser(c *gin.Context) {
 	var user model.User
 	uuid := c.Params.ByName("uuid")
 
-	if errUser := db.Where("uuid = ?", uuid).First(&user).Error; errUser != nil {
+	if err := db.Where("uuid = ?", uuid).First(&user).Error; err != nil {
 		c.AbortWithStatus(400)
-		panic(errUser)
+		panic(err)
 	}
 	c.BindJSON(&user)
 	var hash = hashPassword(user.Password)
 	user.Password = hash
-	dbUser.Save(&user)
+	db.Save(&user)
+	user.Password = ""
 	c.JSON(200, user)
 }
 
@@ -88,8 +107,8 @@ func DeleteUser(c *gin.Context) {
 	var user model.User
 	uuid := c.Params.ByName("uuid")
 
-	dbUser.Where("uuid = ?", uuid).Delete(&user)
-	c.JSON(200, "deleted")
+	db.Where("uuid = ?", uuid).Delete(&user)
+	c.JSON(200, "This user deletes!")
 }
 
 //Connect a user and add a JWT token

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/jinzhu/gorm"
 )
 
@@ -13,7 +15,8 @@ type User struct {
 	LastName    string `json:"last_name"`
 	Email       string `json:"email"`
 	Password    string `json:"password"`
-	DateOfBirth int    `json:"birth_date"`
+	//DateOfBirth int    `json:"birth_date"`
+	DateOfBirth time.Time `json:"birth_date"`
 }
 
 //type JsonBirthDate time.Time

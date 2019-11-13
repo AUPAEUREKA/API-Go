@@ -39,7 +39,7 @@ func UpdateProposal(c *gin.Context) {
 	c.JSON(200, proposal)
 }
 
-//User vote a proposal
+//User votes a proposal
 func Vote(c *gin.Context) {
 	var user model.User
 	var proposal model.Proposal
@@ -61,7 +61,7 @@ func Vote(c *gin.Context) {
 		fmt.Println("err query")
 		c.AbortWithStatus(400)
 	} else {
-		c.JSON(200, "A voté")
+		c.JSON(200, "Voted")
 	}
 
 }

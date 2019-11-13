@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	age "github.com/bearbin/go-age"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -49,8 +50,9 @@ func main() {
 
 //Connect a user and create a JWT token
 func Login(c *gin.Context) {
+	os.Setenv("API_SECRET", "85ds47")
 	type login struct {
-		Username string `json:"email"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
@@ -59,17 +61,17 @@ func Login(c *gin.Context) {
 	type Result struct {
 		Email       string
 		UUID        string
-		Accesslevel string
+		AccessLevel string
 		Password    string
 	}
 	var user Result
-	if !db.Table("users").Select("email, password, uuid, access_level").Where("email = ?", loginParams.Username).Scan(&user).RecordNotFound() {
+	if !db.Table("users").Select("email, password, uuid, access_level").Where("email = ?", loginParams.Email).Scan(&user).RecordNotFound() {
 		if CheckPasswordHash(loginParams.Password, user.Password) {
 			token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 				"uuid": user.UUID,
-				"acl":  user.Accesslevel,
+				"acl":  user.AccessLevel,
 			})
-			tokenStr, err := token.SignedString([]byte(os.Getenv("SECRET")))
+			tokenStr, err := token.SignedString([]byte(os.Getenv("API_SECRET")))
 
 			if err != nil {
 				c.JSON(500, err)
@@ -90,29 +92,41 @@ func Login(c *gin.Context) {
 
 //Create a user with validations
 func CreateUser(c *gin.Context) {
+	type result struct {
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		Email       string `json:"email"`
+		Password    string `json:"password"`
+		DateOfBirth string `json:"birth_date"`
+	}
+	UserParams := result{}
+
+	err := c.ShouldBindJSON(&UserParams)
+	layout := "2006-01-02"
+	str := UserParams.DateOfBirth
+	t, er := time.Parse(layout, str)
+
+	if er != nil {
+		fmt.Println(er)
+	}
+
 	var user model.User
-	err := c.BindJSON(&user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
-	if len(user.Password) == 0 {
+	if len(UserParams.Password) == 0 {
 		fmt.Println("err2")
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, "No given password")
 		return
 	}
-	if user.DateOfBirth < 18 {
+	if age.Age(t) < 18 {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, "You are not adult!")
 		return
 	}
-	/*if age.Age(user.DateOfBirth) < 18 {
-		log.Println(err)
-		c.JSON(http.StatusBadRequest, "You are not adult!")
-		return
-	}*/
-	if !db.Where("email = ?", user.Email).Find(&user).RecordNotFound() {
+	if !db.Where("email = ?", UserParams.Email).Find(&user).RecordNotFound() {
 		c.JSON(http.StatusBadRequest, "User with this email already exist")
 		return
 	}
@@ -120,9 +134,14 @@ func CreateUser(c *gin.Context) {
 	// 1 = single user; 2 = admin
 	user.AccessLevel = 1
 	user.UUID = id.String()
-	var hash = hashPassword(user.Password)
+	var hash = hashPassword(UserParams.Password)
 	user.Password = hash
+	user.FirstName = UserParams.FirstName
+	user.LastName = UserParams.LastName
+	user.Email = UserParams.Email
+	user.DateOfBirth = t
 	db.Create(&user)
+	user.Password = ""
 	c.JSON(200, &user)
 }
 
@@ -151,6 +170,7 @@ func UpdateUser(c *gin.Context) {
 	var hash = hashPassword(user.Password)
 	user.Password = hash
 	db.Save(&user)
+	user.Password = ""
 	c.JSON(200, user)
 }
 
@@ -160,7 +180,7 @@ func DeleteUser(c *gin.Context) {
 	uuid := c.Params.ByName("uuid")
 
 	db.Where("uuid = ?", uuid).Delete(&user)
-	c.JSON(200, "deleted")
+	c.JSON(200, "This user deletes!")
 }
 
 //Create a new proposal
@@ -211,7 +231,7 @@ func Vote(c *gin.Context) {
 		fmt.Println("err query")
 		c.AbortWithStatus(400)
 	} else {
-		c.JSON(200, "A voté")
+		c.JSON(200, "Voted")
 	}
 
 }
